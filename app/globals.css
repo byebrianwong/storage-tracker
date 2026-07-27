@@ -1,26 +1,230 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  Section 9.5: every visual decision is a custom property on the root element.
+  The renderers never hard code a colour. Switching direction is one attribute.
+
+  Direction A is the default. B and C are ported from the mock at parity so the
+  choice stays reversible.
+*/
+
+:root,
+[data-skin="a"] {
+  --paper: #E9EDF0; --ink: #16232E; --muted: #6C7B86; --hair: #9BAAB4;
+  --wall: #16232E; --accent: #C9DAE6; --accent-line: #1F5F8B; --hot: #D3532A;
+  --focus: #1F5F8B; --ok: #2E7D5B; --warn: #B4761C; --err: #C0392B;
+  --on-accent: #16232E;
+  --panel: #F4F6F8; --hover: #DCE4EA; --bar-bg: #F4F6F8;
+  --rule: 1px solid #C7D1D8; --field-border: 1px solid #B7C4CC; --field-bg: #FDFEFE;
+  --radius-sm: 2px; --shadow: 0 6px 18px rgba(22,35,46,.12);
+  --display: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --body: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --mono: var(--font-plex-mono), ui-monospace, monospace;
+  --label: var(--font-plex-mono), ui-monospace, monospace;
+  --brand-size: 13px; --brand-weight: 600; --brand-track: .16em; --brand-case: uppercase;
+  --zone-fill: #D6E1E8; --zone-stroke: #16232E; --zone-hover: #C4D4DE; --zone-rx: 0px;
+  --case-fill: #FDFEFE; --case-stroke: #16232E; --case-rx: 0px;
+  --box-fill: url(#hatch); --box-stroke: #16232E; --box-rx: 0px;
+  --box-ink: #16232E; --box-meta: #6C7B86; --label-weight: 500;
+  --plate-display: none; --knob-display: none; --dim-display: inline;
+  --plate-fill: none; --plate-stroke: none; --knob-fill: none;
+  --plan-label-ink: #16232E; --plan-label-bg: rgba(253,254,254,.82);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-skin="b"] {
+  --paper: #D8C8A6; --ink: #2E2417; --muted: #7A6A50; --hair: #A8956F;
+  --wall: #2E2417; --accent: #7A2E2E; --accent-line: #4E1C1C; --hot: #B4761C;
+  --focus: #4E1C1C; --ok: #4E6B3A; --warn: #B4761C; --err: #8C2F1E;
+  --on-accent: #F2E9D6;
+  --panel: #EFE5CE; --hover: #E3D6B7; --bar-bg: #C9B892;
+  --rule: 1px solid #B5A17B; --field-border: 1px solid #8E7A56; --field-bg: #F5EDDB;
+  --radius-sm: 3px; --shadow: 0 8px 22px rgba(46,36,23,.28);
+  --display: var(--font-bitter), Georgia, serif; --body: var(--font-bitter), Georgia, serif;
+  --mono: var(--font-courier-prime), ui-monospace, monospace;
+  --label: var(--font-courier-prime), ui-monospace, monospace;
+  --brand-size: 15px; --brand-weight: 600; --brand-track: .04em; --brand-case: none;
+  --zone-fill: #EFE5CE; --zone-stroke: #6B5836; --zone-hover: #E3D6B7; --zone-rx: 2px;
+  --case-fill: #C9B892; --case-stroke: #6B5836; --case-rx: 3px;
+  --box-fill: #EFE5CE; --box-stroke: #6B5836; --box-rx: 2px;
+  --box-ink: #2E2417; --box-meta: #7A6A50; --label-weight: 700;
+  --plate-display: inline; --knob-display: inline;
+  --plate-fill: #F7F1E2; --plate-stroke: #8E7A56; --knob-fill: #A8802C;
+  --dim-display: none;
+  --plan-label-ink: #2E2417; --plan-label-bg: rgba(245,237,219,.86);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+[data-skin="c"] {
+  --paper: #221C33; --ink: #F0ECFA; --muted: #9A92B5; --hair: #4A4066;
+  --wall: #6F63A0; --accent: #7EE0B8; --accent-line: #F0ECFA; --hot: #F5D77E;
+  --focus: #8EC5F5; --ok: #7EE0B8; --warn: #F5D77E; --err: #F58C7E;
+  --on-accent: #221C33;
+  --panel: #2C2442; --hover: #383056; --bar-bg: #2C2442;
+  --rule: 1px solid #3D3459; --field-border: 1px solid #4A4066; --field-bg: #191428;
+  --radius-sm: 10px; --shadow: 0 10px 30px rgba(0,0,0,.45);
+  --display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --body: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --mono: var(--font-plex-mono), ui-monospace, monospace;
+  --label: var(--font-outfit), ui-sans-serif, sans-serif;
+  --brand-size: 16px; --brand-weight: 700; --brand-track: -.01em; --brand-case: none;
+  --zone-fill: var(--tag-color, #4A4066); --zone-stroke: transparent;
+  --zone-hover: #8EC5F5; --zone-rx: 6px;
+  --case-fill: #191428; --case-stroke: #3D3459; --case-rx: 14px;
+  --box-fill: var(--tag-color, #4A4066); --box-stroke: transparent; --box-rx: 10px;
+  --box-ink: #221C33; --box-meta: #4A3F6B; --label-weight: 500;
+  --plate-display: none; --knob-display: none; --dim-display: none;
+  --plate-fill: none; --plate-stroke: none; --knob-fill: none;
+  /* the plan asset stays a light document even on the dark shell */
+  --plan-label-ink: #221C33; --plan-label-bg: rgba(240,236,250,.88);
+}
+
+[data-skin="c"] .roomlabel { fill: #7E74A5; }
+[data-skin="c"] .zone[data-selected="true"] polygon { stroke: #F0ECFA; stroke-width: 2; }
+
+/*
+  Direction C colours every container by its category. That CANNOT go through
+  --box-fill / --zone-fill.
+
+  A custom property containing var() is substituted when it is computed on the
+  element that DECLARES it. --tag-color is set per shape, but --box-fill is
+  declared up on the skin root where --tag-color does not exist yet, so it
+  resolves to the fallback there and inherits down as a dead literal. The mock
+  has this same bug: every bin renders the same fallback purple.
+
+  Using var(--tag-color) directly in the `fill` declaration on the shape itself
+  resolves it against the shape's own inherited value, which is what we want.
+*/
+[data-skin="c"] .zone polygon { fill: var(--tag-color, #4A4066); }
+[data-skin="c"] .box rect.body { fill: var(--tag-color, #4A4066); }
+[data-skin="c"] .zone:hover polygon { fill: var(--zone-hover); }
+[data-skin="c"] .zone[data-selected="true"] polygon { fill: var(--accent); }
+
+* { box-sizing: border-box; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  margin: 0;
+  min-width: 320px;
+}
+
+/* ---------- shared chrome ---------- */
+.brand {
+  font-family: var(--display); font-size: var(--brand-size); font-weight: var(--brand-weight);
+  letter-spacing: var(--brand-track); text-transform: var(--brand-case); color: var(--ink);
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
+.zonename {
+  font-family: var(--display); font-size: 17px; font-weight: var(--brand-weight); color: var(--ink);
+}
+.surface {
+  background: var(--panel); border: var(--field-border); border-radius: var(--radius-sm);
+}
+.rule { border-bottom: var(--rule); }
+.field {
+  width: 100%; font-family: var(--body); font-size: 16px; padding: 10px 12px; color: var(--ink);
+  background: var(--field-bg); border: var(--field-border); border-radius: var(--radius-sm);
+}
+.field::placeholder { color: var(--muted); }
+.btn {
+  font-family: var(--body); font-size: 13px; padding: 8px 12px; cursor: pointer;
+  border-radius: var(--radius-sm); border: var(--field-border);
+  background: var(--field-bg); color: var(--ink);
+  /* section 9.4: 44px minimum touch target */
+  min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn.primary { background: var(--accent); border-color: var(--accent-line); color: var(--on-accent); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+
+/* Section 9.4: visible focus on everything, including SVG shapes. */
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.zone:focus-visible, .box:focus-visible { outline: none; }
+.zone:focus-visible polygon, .box:focus-visible rect.body {
+  stroke: var(--focus); stroke-width: 2.6;
+}
+
+/* ---------- floor plan ---------- */
+.wall { stroke: var(--wall); stroke-width: 3; fill: none; }
+.roomlabel {
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: .12em;
+  text-transform: uppercase; fill: var(--muted);
+}
+/*
+  Zone labels are drawn over the uploaded plan image, not over the page, so they
+  take --plan-label-ink rather than --ink. Without this the near white ink of
+  direction C disappears against a white floor plan. The chip keeps them legible
+  over busy parts of the drawing too.
+*/
+.zonelabel {
+  font-family: var(--body); font-size: 9.5px;
+  color: var(--plan-label-ink); fill: var(--plan-label-ink);
+  background: var(--plan-label-bg);
+  padding: 1px 4px; border-radius: var(--radius-sm);
+}
+.zone { cursor: pointer; }
+.zone polygon {
+  fill: var(--zone-fill); stroke: var(--zone-stroke); stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.zone:hover polygon { fill: var(--zone-hover); }
+.zone[data-selected="true"] polygon { fill: var(--accent); stroke: var(--accent-line); stroke-width: 1.6; }
+.zone[data-hit="true"] polygon { stroke: var(--hot); stroke-width: 2.4; }
+.zone[data-selected="true"] .zonelabel { font-weight: 600; }
+/*
+  Expanded hit polygons from section 5.2: invisible, but they take the taps.
+
+  The transparent stroke is the actual touch slop. vector-effect keeps its width
+  in SCREEN pixels however the plan is scaled into the viewport, so a hairline
+  closet on a 360px phone still gets a finger sized target without measuring the
+  rendered size in JavaScript. pointer-events: all makes an unpainted stroke
+  hit-testable; without it a fully transparent stroke is ignored.
+*/
+.hitarea {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 24;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: all;
+}
+.leader { stroke: var(--hair); stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+/* ---------- elevation ---------- */
+.frame { fill: var(--case-fill); stroke: var(--case-stroke); stroke-width: 2; rx: var(--case-rx); }
+.board { stroke: var(--case-stroke); stroke-width: 2; }
+.shelflabel {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em;
+  text-transform: uppercase; fill: var(--muted);
+}
+.box { cursor: pointer; }
+.box rect.body { fill: var(--box-fill); stroke: var(--box-stroke); stroke-width: 1.2; rx: var(--box-rx); }
+.box:hover rect.body { stroke: var(--accent-line); }
+.box[data-selected="true"] rect.body { stroke: var(--accent-line); stroke-width: 2.6; }
+.box[data-hit="true"] rect.body { stroke: var(--hot); stroke-width: 2.6; }
+.box .plate { display: var(--plate-display); fill: var(--plate-fill); stroke: var(--plate-stroke); stroke-width: .8; }
+.box .knob { display: var(--knob-display); fill: var(--knob-fill); }
+.boxtitle { font-family: var(--label); font-size: 11px; font-weight: var(--label-weight); fill: var(--box-ink); }
+.boxmeta { font-family: var(--mono); font-size: 9px; fill: var(--box-meta); }
+.dim { display: var(--dim-display); stroke: var(--hair); stroke-width: .8; }
+.dimtext { display: var(--dim-display); font-family: var(--mono); font-size: 8.5px; fill: var(--muted); }
+
+/* ---------- status ---------- */
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.dot[data-state="ok"] { background: var(--ok); }
+.dot[data-state="pending"] { background: var(--warn); }
+.dot[data-state="error"] { background: var(--err); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .zone polygon, .box rect.body { transition: fill .12s ease, stroke .12s ease; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
