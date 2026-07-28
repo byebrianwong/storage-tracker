@@ -222,6 +222,36 @@ is slow, but says to measure first. Not denormalized. The ownership walk lives i
 so policies stay one function call rather than an inline five table join.
 Revisit with `EXPLAIN` against real data before adding the column.
 
+### Sync latency does not depend on the cron schedule
+
+§7.4 puts an every-minute cron on `/api/sync/drain` and §7.6 puts the
+incremental reconcile on 15 minutes. **Vercel's Hobby plan caps cron jobs at once
+per day, and a more frequent expression fails the deployment outright** rather
+than degrading. This account is on Hobby.
+
+Simply making the crons daily would have broken §1's "a row added in Notion
+appears in the app within 2 minutes", because the webhook only *enqueues* a pull
+job — the drain is what processes it, so a queued pull would have waited up to 24
+hours.
+
+So the webhook now dispatches the drain itself, fire and forget, exactly as a
+Server Action mutation already did. Latency in both directions is now driven by
+the events themselves, not by the schedule:
+
+| Path | Trigger | Latency |
+| --- | --- | --- |
+| App → Notion | `dispatchDrain()` after the mutation | seconds |
+| Notion → app | webhook verifies, enqueues, dispatches drain | seconds |
+| Anything missed | daily full reconcile, then a drain | within a day |
+
+`vercel.json` therefore declares two daily crons. This is arguably the better
+architecture on any plan: §7.6 already says reconciliation is the correctness
+mechanism and webhooks are the latency mechanism, and this makes the code match
+that sentence instead of quietly relying on a minute-level cron for both.
+
+On Pro, tightening the drain to `* * * * *` and adding the 15 minute incremental
+reconcile back is a `vercel.json` edit and nothing else.
+
 ### Touch targets are CSS, not measurement (§5.2, §9.4)
 
 `expandForTouch` takes pixel dimensions, and the plan's *intrinsic* size is what

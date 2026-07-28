@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseService } from '@/lib/db/service'
+import { dispatchDrain } from '@/lib/sync/dispatch'
 import {
   verifySignature, isPageEvent, isSchemaEvent, pageIdFromEvent,
   type NotionWebhookEvent,
@@ -88,6 +89,19 @@ export async function POST(request: NextRequest) {
         notion_page_id: pageId,
         op: 'upsert',
       })
+
+      /*
+        Kick the drain without waiting for it, the same way a Server Action
+        mutation does.
+
+        Section 7.4 leaves inbound latency to the every-minute cron, but Vercel's
+        Hobby plan caps cron jobs at once per day, so a queued pull would sit
+        there for up to 24 hours and the "appears within 2 minutes" criterion in
+        section 1 would be unmeetable. Dispatching here makes inbound latency
+        independent of the cron schedule on any plan, and leaves the cron as what
+        section 7.6 says it really is: the safety net, not the mechanism.
+      */
+      dispatchDrain()
     }
   }
 

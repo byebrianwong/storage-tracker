@@ -151,8 +151,15 @@ self-defeating.
 
 ## Deploying
 
-Vercel. `vercel.json` declares the three crons (drain every minute, incremental
-reconcile every 15 minutes, full reconcile nightly at 04:00). Set every variable
-from `.env.example` in the project settings, including `CRON_SECRET`, which the
-sync endpoints require as a bearer token. The webhook does not use it — it
-authenticates with Notion's HMAC instead.
+Vercel. Set every variable from `.env.example` in the project settings, including
+`CRON_SECRET`, which the sync endpoints require as a bearer token. The webhook
+does not use it — it authenticates with Notion's HMAC instead.
+
+`vercel.json` declares two **daily** crons: the full reconcile at 04:00 and a
+drain at 05:00. That is deliberate, not a compromise on correctness. Vercel's
+Hobby plan rejects any cron that runs more than once a day at deploy time, so
+sync latency is driven by events instead — a mutation dispatches a drain, and so
+does the webhook. The crons are purely the safety net. See DECISIONS.md.
+
+On Pro you can tighten the drain to `* * * * *` and add a 15 minute incremental
+reconcile; nothing else has to change.
