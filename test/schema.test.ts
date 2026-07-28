@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { freshDb, seedHousehold, type TestDb } from './pg'
+import { DB_SCHEMA, PLANS_BUCKET } from '@/lib/db/constants'
 
 describe('migrations', () => {
   let db: TestDb
@@ -9,7 +10,7 @@ describe('migrations', () => {
   it('applies every migration cleanly', async () => {
     const { rows } = await db.query<{ table_name: string }>(
       `select table_name from information_schema.tables
-       where table_schema = 'public' order by table_name`,
+       where table_schema = $1 order by table_name`, [DB_SCHEMA] as never[],
     )
     const names = rows.map((r) => r.table_name)
     expect(names).toEqual(expect.arrayContaining([
@@ -23,7 +24,7 @@ describe('migrations', () => {
     const { rows } = await db.query<{ relname: string }>(
       `select relname from pg_class c
        join pg_namespace n on n.oid = c.relnamespace
-       where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity`,
+       where n.nspname = $1 and c.relkind = 'r' and not c.relrowsecurity`, [DB_SCHEMA] as never[],
     )
     expect(rows.map((r) => r.relname)).toEqual([])
   })
@@ -156,7 +157,7 @@ describe('RLS isolation (M1 acceptance)', () => {
     const outsider = await seedHousehold(db, 'mallory@example.com')
 
     await db.query(`insert into items (household_id, name) values ($1,'Passports')`, [alice.householdId])
-    await db.query(`grant select, insert, update on all tables in schema public to authenticated`)
+    await db.query(`grant select, insert, update on all tables in schema storage_tracker to authenticated`)
 
     const count = async (uid: string) => db.asUser(uid, async () =>
       Number((await db.query<{ n: string }>(`select count(*) n from items`)).rows[0].n))
@@ -180,7 +181,7 @@ describe('RLS isolation (M1 acceptance)', () => {
     // Deliberately hostile: hand `authenticated` every grant there is. RLS with
     // no policy must still return nothing, which a column level revoke would not
     // have achieved because column privileges cannot subtract from a table grant.
-    await db.query(`grant all on all tables in schema public to authenticated`)
+    await db.query(`grant all on all tables in schema storage_tracker to authenticated`)
 
     await db.asUser(dave.userId, async () => {
       const config = await db.query<{ items_database_id: string }>(
@@ -198,8 +199,8 @@ describe('RLS isolation (M1 acceptance)', () => {
     const erin = await seedHousehold(db, 'erin@example.com')
     const frank = await seedHousehold(db, 'frank@example.com')
     await db.query(
-      `insert into storage.objects (bucket_id, name) values ('floorplans', $1)`,
-      [`${erin.homeId}/${erin.floorId}.png`] as never[])
+      `insert into storage.objects (bucket_id, name) values ($1, $2)`,
+      [PLANS_BUCKET, `${erin.homeId}/${erin.floorId}.png`] as never[])
     await db.query(`grant all on all tables in schema storage to authenticated`)
 
     const visible = async (uid: string) => db.asUser(uid, async () =>
@@ -210,9 +211,9 @@ describe('RLS isolation (M1 acceptance)', () => {
     expect(await visible(frank.userId)).toBe(0)
   })
 
-  it('keeps the floorplans bucket private', async () => {
+  it('keeps the plans bucket private', async () => {
     const { rows } = await db.query<{ public: boolean }>(
-      `select public from storage.buckets where id = 'floorplans'`)
+      `select public from storage.buckets where id = $1`, [PLANS_BUCKET] as never[])
     expect(rows[0]?.public).toBe(false)
   })
 
@@ -220,7 +221,7 @@ describe('RLS isolation (M1 acceptance)', () => {
     const carol = await seedHousehold(db, 'carol@example.com')
     await db.query(`insert into items (household_id, name, deleted_at) values ($1,'Old thing', now())`,
       [carol.householdId])
-    await db.query(`grant select on all tables in schema public to authenticated`)
+    await db.query(`grant select on all tables in schema storage_tracker to authenticated`)
     const n = await db.asUser(carol.userId, async () =>
       Number((await db.query<{ n: string }>(`select count(*) n from items`)).rows[0].n))
     expect(n).toBe(0)

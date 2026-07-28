@@ -1,5 +1,5 @@
 import 'server-only'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { ServiceClient } from '@/lib/db/service'
 import type { SyncJob, SyncEntity } from '@/lib/types'
 
 /**
@@ -104,7 +104,7 @@ export type NotionConfigRow = {
 }
 
 /** The Supabase backed implementation, used in production. */
-export function supabaseSyncStore(db: SupabaseClient): SyncStore {
+export function supabaseSyncStore(db: ServiceClient): SyncStore {
   return {
     async claimJobs(limit) {
       // for update skip locked, section 7.4 step 1. Done in a function because

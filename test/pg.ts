@@ -32,6 +32,10 @@ const AUTH_STUB = `
     if not exists (select 1 from pg_roles where rolname = 'authenticated') then
       create role authenticated;
     end if;
+    if not exists (select 1 from pg_roles where rolname = 'service_role') then
+      -- bypassrls mirrors Supabase, where the sync workers rely on it
+      create role service_role bypassrls;
+    end if;
   end $$;
 
   -- Supabase Storage, enough of it for the floorplans bucket migration to apply
@@ -84,15 +88,28 @@ export async function freshDb(): Promise<TestDb> {
     }
   }
 
+  // The app's objects live in storage_tracker, not public. PostgREST reaches
+  // them via the client's `db.schema` option; a raw SQL session needs the
+  // search_path instead, so tests can write unqualified table names.
+  await db.exec(`set search_path = storage_tracker, extensions, public;`)
+
   const tdb = db as unknown as TestDb
   tdb.asUser = async (userId, fn) => {
     // RLS is bypassed for superusers, which is what PGlite connects as.
     // `set role authenticated` makes the policies actually apply.
-    await db.exec(`set role authenticated; select set_config('request.jwt.claim.sub', '${userId}', false);`)
+    await db.exec(
+      `set role authenticated;
+       set search_path = storage_tracker, extensions, public;
+       select set_config('request.jwt.claim.sub', '${userId}', false);`,
+    )
     try {
       return await fn()
     } finally {
-      await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false);`)
+      await db.exec(
+        `reset role;
+         set search_path = storage_tracker, extensions, public;
+         select set_config('request.jwt.claim.sub', '', false);`,
+      )
     }
   }
   return tdb

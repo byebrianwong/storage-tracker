@@ -2,6 +2,7 @@ import 'server-only'
 import { supabaseServer } from '@/lib/db/server'
 import { PolygonSchema, type ZoneWithLayout } from '@/lib/types'
 import type { PlanZone } from '@/components/plan/PlanCanvas'
+import { PLANS_BUCKET } from '@/lib/db/constants'
 
 /** The floor the plan view renders. v1 assumes one, see DECISIONS.md. */
 export async function currentFloor(householdId: string) {
@@ -20,7 +21,7 @@ export async function currentFloor(householdId: string) {
 export async function planSignedUrl(planPath: string | null): Promise<string | null> {
   if (!planPath) return null
   const supabase = await supabaseServer()
-  const { data } = await supabase.storage.from('floorplans').createSignedUrl(planPath, 3600)
+  const { data } = await supabase.storage.from(PLANS_BUCKET).createSignedUrl(planPath, 3600)
   return data?.signedUrl ?? null
 }
 

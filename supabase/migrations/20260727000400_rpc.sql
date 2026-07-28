@@ -4,9 +4,11 @@
 -- Create a household, home and floor for a brand new user, and enrol them.
 -- security definer because the caller has no household yet, so no policy can
 -- admit the inserts.
+set search_path = storage_tracker, extensions, public;
+
 create or replace function bootstrap_household(household_name text)
 returns uuid language plpgsql security definer
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
 declare
   uid uuid := auth.uid();
   hh uuid;
@@ -46,7 +48,7 @@ returns table (
   container_label text
 )
 language sql stable
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   with needle as (
     select lower(btrim(q)) as t,
            websearch_to_tsquery('english', btrim(q)) as tsq
@@ -95,7 +97,7 @@ $$;
 create or replace function container_item_counts(zone uuid)
 returns table (container_id uuid, item_count bigint)
 language sql stable
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   select c.id, count(i.id)
   from containers c
   join shelves s on s.id = c.shelf_id

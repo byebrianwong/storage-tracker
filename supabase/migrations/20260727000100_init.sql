@@ -1,10 +1,30 @@
 -- Home storage inventory: core schema
 -- Spec: handoff section 4.2
+--
+-- Everything this app owns lives in the `storage_tracker` schema, never in
+-- `public`. The Supabase project is shared with other apps, and `public` there
+-- already holds their tables. Beyond the obvious `items` / `containers` name
+-- clashes, a bare `create or replace function touch_updated_at()` in `public`
+-- would SILENTLY overwrite another app's trigger function of the same name
+-- rather than failing. A dedicated schema makes that impossible by construction.
+--
+-- Remember: a custom schema is not exposed to PostgREST by default. It must be
+-- added under Dashboard, API, Exposed schemas, and the supabase-js clients pass
+-- db: { schema: 'storage_tracker' }.
 
-create extension if not exists "pgcrypto";
-create extension if not exists "pg_trgm";
+create schema if not exists storage_tracker;
+-- `extensions` already exists on Supabase; created here so the same migrations
+-- apply to a bare Postgres (the PGlite test harness).
+create schema if not exists extensions;
+
+create extension if not exists "pgcrypto" with schema extensions;
+create extension if not exists "pg_trgm" with schema extensions;
 -- required so the containers exclusion constraint can mix `=` on uuid with `&&` on a range
-create extension if not exists "btree_gist";
+create extension if not exists "btree_gist" with schema extensions;
+
+-- Unqualified objects below land in storage_tracker. `extensions` is on the
+-- path so gen_random_uuid(), similarity() and the gist operator classes resolve.
+set search_path = storage_tracker, extensions, public;
 
 create type container_kind as enum
   ('bin','drawer','box','basket','rod','hook','open_shelf','cabinet','other');

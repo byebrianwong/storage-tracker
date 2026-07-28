@@ -3,13 +3,15 @@
 
 -- Section 7.4 step 1: claim up to `lim` ready jobs with `for update skip locked`,
 -- so two concurrent drains never process the same job.
+set search_path = storage_tracker, extensions, public;
+
 create or replace function claim_sync_jobs(lim int default 25)
 returns table (
   id text, household_id uuid, direction sync_direction, entity_type sync_entity,
   entity_id uuid, notion_page_id text, op text, attempts int
 )
 language plpgsql
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
 begin
   return query
   with claimed as (
@@ -33,7 +35,7 @@ returns table (
   id uuid, household_id uuid, label text, kind text, zone_name text, shelf_name text
 )
 language sql stable
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   select c2.id, homes.household_id, c2.label, c2.kind::text, z.name, s.name
   from containers c2
   join shelves s on s.id = c2.shelf_id
@@ -53,7 +55,7 @@ create or replace function apply_inbound_item(
   p_insert boolean default false
 ) returns uuid
 language plpgsql
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
 declare
   result uuid;
 begin
@@ -105,7 +107,7 @@ end $$;
 create or replace function ensure_unsorted_container(h uuid)
 returns uuid
 language plpgsql
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
 declare
   target_shelf uuid;
   target_zone uuid;

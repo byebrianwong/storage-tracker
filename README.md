@@ -46,13 +46,29 @@ pnpm test test/sync.conformance.test.ts   # the ten that matter
 
 ## Setting up Supabase
 
-1. Create a project, then run the migrations in `supabase/migrations/` in
-   filename order (`supabase db push`, or paste them into the SQL editor).
-2. Create a **private** Storage bucket named `floorplans`. Do not make it public;
-   the app serves signed URLs with a one hour expiry.
-3. Enable Realtime on the `items` and `containers` tables, so a Notion sync write
-   appears without the user refreshing.
-4. Copy the project URL, anon key and service role key into `.env.local`.
+This app is designed to **share a Supabase project with other apps**. Everything
+it owns lives in a dedicated `storage_tracker` schema and a namespaced
+`storage-tracker-floorplans` bucket, so it cannot collide with anything already
+in `public`. See DECISIONS.md for why that matters more than it sounds.
+
+1. Run the migrations in `supabase/migrations/` in filename order
+   (`supabase link --project-ref <ref>` then `supabase db push`, or paste them
+   into the SQL editor). They create the schema, the bucket, its policies, and
+   the Realtime publication membership — no manual dashboard clicking for any of
+   that.
+2. **Expose the schema.** Dashboard → Project Settings → API → *Exposed schemas*:
+   add `storage_tracker`. This is the one step SQL cannot do for you, and until
+   it is done every query returns 403 no matter how correct the policies are.
+3. Copy the project URL, anon key and service role key into `.env.local`.
+
+Both namespaces are defined once in `lib/db/constants.ts`; all three Supabase
+clients pass `db: { schema: DB_SCHEMA }`.
+
+> **Shared auth.** `auth.users` is project-wide. Anyone who can sign in to
+> another app in the same project can sign in here and will get their own empty
+> household on first login. RLS keeps households fully isolated from each other,
+> but if you want the door closed rather than merely partitioned, gate
+> `bootstrap_household` on an allowlist.
 
 Auth is magic link. The first sign in bootstraps a household, home and floor
 automatically. To add the second person, invite them by email in the Supabase

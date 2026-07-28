@@ -1,6 +1,7 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { DB_SCHEMA } from './constants'
 
 /** Request scoped Supabase client that carries the user's session. RLS applies. */
 export async function supabaseServer() {
@@ -9,6 +10,7 @@ export async function supabaseServer() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      db: { schema: DB_SCHEMA },
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (toSet) => {

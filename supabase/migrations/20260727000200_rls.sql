@@ -2,9 +2,11 @@
 -- Spec: handoff section 4.3
 -- https://supabase.com/docs/guides/database/postgres/row-level-security
 
+set search_path = storage_tracker, extensions, public;
+
 create or replace function is_household_member(h uuid)
 returns boolean language sql stable security definer
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   select exists (
     select 1 from household_members
     where household_id = h and user_id = auth.uid()
@@ -16,7 +18,7 @@ $$;
 -- instead of a five table join per row.
 create or replace function zone_is_visible(z uuid)
 returns boolean language sql stable security definer
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   select exists (
     select 1
     from zones
@@ -29,7 +31,7 @@ $$;
 
 create or replace function shelf_is_visible(s uuid)
 returns boolean language sql stable security definer
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   select exists (
     select 1 from shelves where shelves.id = s and zone_is_visible(shelves.zone_id)
   );
@@ -37,7 +39,7 @@ $$;
 
 create or replace function container_is_visible(c uuid)
 returns boolean language sql stable security definer
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   select exists (
     select 1 from containers where containers.id = c and shelf_is_visible(containers.shelf_id)
   );
@@ -45,7 +47,7 @@ $$;
 
 create or replace function floor_is_visible(f uuid)
 returns boolean language sql stable security definer
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   select exists (
     select 1
     from floors
@@ -57,7 +59,7 @@ $$;
 
 create or replace function home_is_visible(h uuid)
 returns boolean language sql stable security definer
-set search_path = public, pg_temp as $$
+set search_path = storage_tracker, extensions, public, pg_temp as $$
   select exists (
     select 1
     from homes
@@ -146,9 +148,36 @@ create policy sync_conflicts_rw on sync_conflicts
 create policy sync_runs_read on sync_runs
   for select using (household_id is null or is_household_member(household_id));
 
+/*
+  PostgREST grants.
+
+  Supabase's default grants only cover `public`, so a custom schema is invisible
+  to the API until it is granted explicitly AND added to Dashboard, API, Exposed
+  schemas. Without both, every request comes back 403 even though the policies
+  above are correct.
+
+  Broad table grants plus RLS is the standard Supabase pattern: the grant makes
+  the table reachable, the policy decides which rows. `anon` gets nothing in
+  practice because every policy goes through is_household_member(), which needs
+  auth.uid().
+*/
+grant usage on schema storage_tracker to anon, authenticated, service_role;
+
+grant all on all tables in schema storage_tracker to anon, authenticated, service_role;
+grant all on all sequences in schema storage_tracker to anon, authenticated, service_role;
+grant all on all functions in schema storage_tracker to anon, authenticated, service_role;
+
+alter default privileges in schema storage_tracker
+  grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema storage_tracker
+  grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema storage_tracker
+  grant all on functions to anon, authenticated, service_role;
+
 -- notion_secrets deliberately gets NO policy. RLS is enabled, so `authenticated`
 -- and `anon` see zero rows no matter what table grants exist. Only the service
 -- role, which bypasses RLS, can read the webhook HMAC key.
 --
+-- This revoke MUST stay after the blanket grant above, or the grant re-opens it.
 -- Do not "fix" this by adding a policy. See the comment on the table.
 revoke all on notion_secrets from authenticated, anon;

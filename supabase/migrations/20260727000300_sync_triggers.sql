@@ -1,6 +1,8 @@
 -- updated_at maintenance and outbound sync enqueueing
 -- Spec: handoff section 4.4
 
+set search_path = storage_tracker, extensions, public;
+
 create or replace function touch_updated_at() returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;
 

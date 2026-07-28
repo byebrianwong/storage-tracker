@@ -188,6 +188,45 @@ exclude using gist (shelf_id with =, int4range(col_start, col_start + col_span) 
 Requires `btree_gist` for the `=` on a uuid. `validateShelf.ts` exists too, but as
 the editor's friendly message, not as the guarantee.
 
+### A dedicated schema, because this Supabase project is shared
+
+The project (`ssmiunjctsigikbwdfpc`) already hosts several other apps, so `public`
+is occupied. Putting this app there would have been unsafe in a way that is easy
+to miss:
+
+- `items`, `containers`, `zones`, `homes`, `floors` are all plausible names for
+  another app's tables. A clash on `create table` at least fails loudly.
+- `create or replace function touch_updated_at() returns trigger` does **not**
+  fail. On a matching signature it silently replaces the existing function body.
+  `touch_updated_at` is close to the most common trigger function name there is,
+  so this migration could have quietly broken another app's `updated_at`
+  handling with no error anywhere.
+
+So everything lives in `storage_tracker`, and the storage bucket is
+`storage-tracker-floorplans` because bucket ids are global to the project. That
+removes the need to inventory what is already in `public` at all: collisions
+become impossible rather than merely unlikely.
+
+Consequences that are easy to trip over, all handled:
+
+| Thing | Why it breaks | Where it is handled |
+| --- | --- | --- |
+| PostgREST 403s everything | Supabase's default grants only cover `public` | explicit grants + `alter default privileges` in the RLS migration |
+| PostgREST still 403s | a custom schema is not exposed by default | **manual**: Dashboard → API → Exposed schemas |
+| Every query 404s | clients default to the `public` schema | `db: { schema: DB_SCHEMA }` on all three clients |
+| Realtime silently never fires | subscription named `schema: 'public'` | `DB_SCHEMA` in `ZoneView` |
+| Realtime still silently never fires | tables must join the `supabase_realtime` publication | `20260727000700_realtime.sql` |
+
+The last two are the dangerous ones — no error is raised in either case, the
+subscription just sits there. Both are covered in code rather than left as
+dashboard steps.
+
+**Shared `auth.users`** is the one thing a schema cannot partition. Any user of
+any app in this project can sign in here and `bootstrap_household` will give them
+an empty household. RLS isolates households from each other correctly, so this is
+not a data leak, but it is a shared front door. Gate `bootstrap_household` on an
+allowlist if that matters.
+
 ### The webhook HMAC key lives in its own table
 
 §7.5 says to persist the verification token to

@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { supabaseServer, currentHousehold } from '@/lib/db/server'
 import { rasterSize, sniffFormat, type PlanFormat } from './image'
 import { renderPdfFirstPageToPng, PdfRenderError } from './pdf'
+import { PLANS_BUCKET } from '@/lib/db/constants'
 
 /**
  * Floor plan upload. Section 5.1.
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
   const planPath = `${floor.home_id as string}/${floor.id as string}.${ext}`
 
   const { error: uploadError } = await supabase.storage
-    .from('floorplans')
+    .from(PLANS_BUCKET)
     .upload(planPath, payload, { contentType, upsert: true, cacheControl: '3600' })
   if (uploadError) return fail(uploadError.message, 502)
 
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
   // bucket nothing else ever sweeps.
   const previous = floor.plan_path as string | null
   if (previous && previous !== planPath) {
-    await supabase.storage.from('floorplans').remove([previous])
+    await supabase.storage.from(PLANS_BUCKET).remove([previous])
   }
 
   const { error: updateError } = await supabase

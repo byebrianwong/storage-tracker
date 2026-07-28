@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ElevationCanvas } from '@/components/elevation/ElevationCanvas'
 import { ContainerPanel, type PanelItem } from '@/components/items/ContainerPanel'
 import { supabaseBrowser } from '@/lib/db/browser'
+import { DB_SCHEMA } from '@/lib/db/constants'
 import type { ZoneWithLayout } from '@/lib/types'
 
 type Props = {
@@ -64,11 +65,11 @@ export function ZoneView({ zone, containers, initialSelectedId, initialItems }: 
     const supabase = supabaseBrowser()
     const channel = supabase
       .channel(`zone-${zone.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => {
+      .on('postgres_changes', { event: '*', schema: DB_SCHEMA, table: 'items' }, () => {
         if (selectedId) void loadItems(selectedId)
         router.refresh()
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'containers' }, () => {
+      .on('postgres_changes', { event: '*', schema: DB_SCHEMA, table: 'containers' }, () => {
         router.refresh()
       })
       .subscribe()
