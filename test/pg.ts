@@ -15,7 +15,7 @@ const MIGRATIONS = join(process.cwd(), 'supabase/migrations')
  * auth.uid() reads a session variable so tests can impersonate a user with
  * `set local request.jwt.claim.sub`, the same shape PostgREST uses.
  */
-const AUTH_STUB = `
+export const AUTH_STUB = `
   create schema if not exists auth;
   create table auth.users (
     id uuid primary key default gen_random_uuid(),
@@ -61,6 +61,14 @@ const AUTH_STUB = `
     select string_to_array(regexp_replace(name, '/[^/]*$', ''), '/');
   $$;
   grant usage on schema storage to authenticated, anon;
+
+  -- Supabase's migration ledger, which the SQL bundle writes to.
+  create schema if not exists supabase_migrations;
+  create table supabase_migrations.schema_migrations (
+    version text primary key,
+    name text,
+    statements text[]
+  );
 `
 
 export type TestDb = PGlite & {

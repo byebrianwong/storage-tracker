@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:bundle": "node scripts/bundle-migrations.mjs > bundle.sql && echo \"wrote bundle.sql\""
   },
   "dependencies": {
     "@notionhq/client": "^5.23.2",

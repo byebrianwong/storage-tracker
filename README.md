@@ -51,11 +51,28 @@ it owns lives in a dedicated `storage_tracker` schema and a namespaced
 `storage-tracker-floorplans` bucket, so it cannot collide with anything already
 in `public`. See DECISIONS.md for why that matters more than it sounds.
 
-1. Run the migrations in `supabase/migrations/` in filename order
-   (`supabase link --project-ref <ref>` then `supabase db push`, or paste them
-   into the SQL editor). They create the schema, the bucket, its policies, and
+1. Apply the migrations. They create the schema, the bucket, its policies, and
    the Realtime publication membership — no manual dashboard clicking for any of
    that.
+
+   ```bash
+   pnpm db:bundle   # writes bundle.sql
+   ```
+
+   Paste `bundle.sql` into the SQL editor and run it once. It is a single
+   transaction, so it either fully applies or does nothing.
+
+   **`supabase db push` does not work against a shared project**, and this is not
+   a workaround for a mistake — it is structural.
+   `supabase_migrations.schema_migrations` is one table in the project database,
+   shared by every repo that pushes to it. Another app already owns this
+   project's ledger, and `db push` refuses the moment the remote holds versions
+   the local directory lacks. `--include-all` does not bypass it. The CLI
+   suggests `migration repair --status reverted` (which marks the *other* app's
+   migrations un-applied, so its repo may re-run them) and `db pull` (which
+   copies that app's whole `public` schema into this repo, which is public) —
+   **do not run either**. The bundle writes its own ledger rows, so
+   `supabase migration list` still reports the truth.
 2. **Expose the schema.** Dashboard → Project Settings → API → *Exposed schemas*:
    add `storage_tracker`. This is the one step SQL cannot do for you, and until
    it is done every query returns 403 no matter how correct the policies are.
