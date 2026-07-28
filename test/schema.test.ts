@@ -20,6 +20,30 @@ describe('migrations', () => {
     ]))
   })
 
+  /*
+    The 000N_*.sql files are placeholders for another app's migrations, carried
+    only so `supabase db push` sees the local set as a superset of the shared
+    ledger. If someone ever fills one in — by pasting the real SQL, or by
+    reaching for a free-looking version number for a new migration — this repo
+    would either publish another app's schema or apply SQL the shared project
+    already ran. Both are silent, so assert the invariant.
+  */
+  it('keeps the shared-ledger placeholders empty', async () => {
+    const { readdir, readFile } = await import('node:fs/promises')
+    const files = (await readdir('supabase/migrations'))
+      .filter((f) => /^\d{1,6}_/.test(f) && !/^\d{14}_/.test(f))
+
+    expect(files.length, 'placeholder files vanished').toBeGreaterThan(0)
+
+    for (const f of files) {
+      const body = (await readFile(`supabase/migrations/${f}`, 'utf8'))
+        .split('\n')
+        .filter((l) => l.trim() && !l.trim().startsWith('--'))
+        .join('')
+      expect(body, `${f} must contain no executable SQL`).toBe('')
+    }
+  })
+
   it('enables row level security on every table', async () => {
     const { rows } = await db.query<{ relname: string }>(
       `select relname from pg_class c

@@ -51,28 +51,27 @@ it owns lives in a dedicated `storage_tracker` schema and a namespaced
 `storage-tracker-floorplans` bucket, so it cannot collide with anything already
 in `public`. See DECISIONS.md for why that matters more than it sounds.
 
-1. Apply the migrations. They create the schema, the bucket, its policies, and
-   the Realtime publication membership — no manual dashboard clicking for any of
-   that.
+1. Apply the migrations:
 
    ```bash
-   pnpm db:bundle   # writes bundle.sql
+   supabase link --project-ref <ref>
+   supabase db push
    ```
 
-   Paste `bundle.sql` into the SQL editor and run it once. It is a single
-   transaction, so it either fully applies or does nothing.
+   They create the schema, the bucket, its policies, and the Realtime
+   publication membership — no manual dashboard clicking for any of that.
 
-   **`supabase db push` does not work against a shared project**, and this is not
-   a workaround for a mistake — it is structural.
-   `supabase_migrations.schema_migrations` is one table in the project database,
-   shared by every repo that pushes to it. Another app already owns this
-   project's ledger, and `db push` refuses the moment the remote holds versions
-   the local directory lacks. `--include-all` does not bypass it. The CLI
-   suggests `migration repair --status reverted` (which marks the *other* app's
-   migrations un-applied, so its repo may re-run them) and `db pull` (which
-   copies that app's whole `public` schema into this repo, which is public) —
-   **do not run either**. The bundle writes its own ledger rows, so
-   `supabase migration list` still reports the truth.
+   **About the `000N_*.sql` placeholders.** They are empty on purpose and are not
+   this app's migrations. `supabase_migrations.schema_migrations` is a single
+   table in the project database, shared by every repo that pushes to it, and
+   another app (`hearsay`, which owns a `hearsay` schema) already has versions
+   `0001`–`0005` recorded there. `db push` aborts whenever the remote ledger
+   holds versions the local directory lacks, assuming a stale checkout. Carrying
+   an empty file per version makes the local set a superset, so the check passes
+   and push applies only this app's migrations. They must stay empty: filling one
+   in would either publish another app's schema from this public repo, or re-run
+   SQL the project already applied. A test enforces it.
+
 2. **Expose the schema.** Dashboard → Project Settings → API → *Exposed schemas*:
    add `storage_tracker`. This is the one step SQL cannot do for you, and until
    it is done every query returns 403 no matter how correct the policies are.
@@ -136,8 +135,8 @@ app/
   (app)/settings/sync         Notion connection, sync log, conflicts
   actions/                    Server Actions, zod validated
   api/notion/webhook          HMAC verified, enqueues and returns
-  api/sync/drain              outbound worker, cron every minute
-  api/sync/reconcile          incremental every 15m, full nightly
+  api/sync/drain              outbound worker, dispatched on write
+  api/sync/reconcile          safety net, daily (see Deploying)
 lib/
   db/         supabase clients: browser, server, service role
   notion/     client (pinned version), mappers, limiter, api surface

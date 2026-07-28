@@ -207,6 +207,24 @@ So everything lives in `storage_tracker`, and the storage bucket is
 removes the need to inventory what is already in `public` at all: collisions
 become impossible rather than merely unlikely.
 
+**The migration ledger is shared too**, and that is the one thing a schema cannot
+partition. `supabase_migrations.schema_migrations` is a single table in the
+project database, so every repo pushing to this project writes to the same list.
+`hearsay` was there first with versions `0001`–`0005`.
+
+`db push` aborts whenever the remote holds versions the local directory lacks —
+it assumes a stale checkout. `--include-all` does not bypass it, and both
+remedies the CLI suggests are actively harmful here: `migration repair --status
+reverted` marks hearsay's migrations un-applied so its repo may re-run them, and
+`db pull` copies hearsay's entire schema into this repo, which is public.
+
+The fix is to carry an **empty placeholder file per foreign version**, so the
+local set is a superset of the remote one and the check passes. Push then applies
+only this app's migrations — verified by dry run before anything was written.
+The placeholders must stay empty, and `test/schema.test.ts` asserts it, because
+filling one in would either publish another app's schema or re-run SQL the
+project already applied. Both fail silently.
+
 Consequences that are easy to trip over, all handled:
 
 | Thing | Why it breaks | Where it is handled |

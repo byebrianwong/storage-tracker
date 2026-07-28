@@ -1,0 +1,14 @@
+-- Placeholder. NOT this app's migration, and deliberately empty.
+--
+-- This Supabase project is shared. Version 0004 belongs to the "hearsay" app,
+-- which owns its own `hearsay` schema and has already applied this against the
+-- project. It is recorded in supabase_migrations.schema_migrations.
+--
+-- `supabase db push` aborts when the remote ledger holds versions the local
+-- directory does not, on the assumption the checkout is stale. Carrying an empty
+-- file for each of hearsay's versions makes the local set a superset of the
+-- remote one, so the check passes and push applies only OUR migrations.
+--
+-- It stays empty on purpose: hearsay's real SQL must not be copied into this
+-- repo, which is public. Nothing here ever runs against the shared project,
+-- because these versions are already in the remote ledger.
