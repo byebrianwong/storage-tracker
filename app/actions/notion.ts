@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { supabaseServer, currentHousehold } from '@/lib/db/server'
+import { selfUrl } from '@/lib/sync/dispatch'
 import { NOTION_VERSION, isNotionConfigured } from '@/lib/notion/client'
 import {
   createDatabases,
@@ -216,7 +217,8 @@ export async function runFullReconcile(): Promise<ActionResult<ReconcileSummary>
     return { ok: false, error: 'Notion is not connected yet.' }
   }
 
-  const base = process.env.APP_URL
+  // Same resolution as the drain dispatch: APP_URL, else Vercel's own vars.
+  const base = selfUrl()
   if (!base) return { ok: false, error: 'APP_URL is not set, so the reconcile route cannot be called.' }
   const secret = process.env.CRON_SECRET
   if (!secret) return { ok: false, error: 'CRON_SECRET is not set, so the reconcile route would reject the call.' }
