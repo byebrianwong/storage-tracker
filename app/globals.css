@@ -160,6 +160,14 @@ html, body {
   direction C disappears against a white floor plan. The chip keeps them legible
   over busy parts of the drawing too.
 */
+/* Narrow screens get the short zone code; see PlanCanvas. */
+.zonelabel-code { display: inline; font-size: 10px; font-weight: 600; }
+.zonelabel-full { display: none; }
+@media (min-width: 640px) {
+  .zonelabel-code { display: none; }
+  .zonelabel-full { display: inline; }
+}
+
 .zonelabel {
   font-family: var(--body); font-size: 9.5px;
   color: var(--plan-label-ink); fill: var(--plan-label-ink);

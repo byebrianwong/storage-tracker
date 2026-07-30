@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { currentHousehold } from '@/lib/db/server'
+import { currentHouseholdId } from '@/lib/db/server'
 import { currentFloor, planSignedUrl, zonesForPlan, unsortedCount } from '@/lib/queries'
 import { PlanView } from './PlanView'
 
 export default async function PlanPage() {
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) redirect('/login')
 
   const floor = await currentFloor(householdId)

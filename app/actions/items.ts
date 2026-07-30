@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { supabaseServer, currentHousehold } from '@/lib/db/server'
+import { supabaseServer, currentHouseholdId } from '@/lib/db/server'
 import { dispatchDrain } from '@/lib/sync/dispatch'
 
 export type ActionResult<T = void> =
@@ -25,7 +25,7 @@ export async function addItem(input: unknown): Promise<ActionResult<{ id: string
   const { containerId, name, category, tags, quantity } = parsed.data
 
   const supabase = await supabaseServer()
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) return { ok: false, error: 'Not signed in' }
 
   const { data, error } = await supabase

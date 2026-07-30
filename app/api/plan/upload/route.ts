@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { supabaseServer, currentHousehold } from '@/lib/db/server'
+import { supabaseServer, currentHouseholdId } from '@/lib/db/server'
 import { rasterSize, sniffFormat, type PlanFormat } from './image'
 import { renderPdfFirstPageToPng, PdfRenderError } from './pdf'
 import { PLANS_BUCKET } from '@/lib/db/constants'
@@ -58,7 +58,7 @@ function objectFor(format: PlanFormat): { ext: string; contentType: string } {
 }
 
 export async function POST(request: NextRequest) {
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) return fail('Not signed in', 401)
 
   // Reject on the declared length before reading the body into memory.

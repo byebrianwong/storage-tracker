@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { currentHousehold, supabaseServer } from '@/lib/db/server'
+import { currentHouseholdId, supabaseServer } from '@/lib/db/server'
 import { currentFloor, planSignedUrl } from '@/lib/queries'
 import { PolygonSchema } from '@/lib/types'
 import { PlanEditor, type EditorZone } from '@/components/plan/PlanEditor'
@@ -43,7 +43,7 @@ async function editorZones(floorId: string): Promise<EditorZone[]> {
 
 /** Section 5.1 and 5.3: upload the plan, then draw zones on it. */
 export default async function SetupPlanPage() {
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) redirect('/login')
 
   const floor = await currentFloor(householdId)

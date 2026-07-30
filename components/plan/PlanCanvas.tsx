@@ -53,8 +53,13 @@ export function PlanCanvas({
     const anchor = z.labelAnchor ?? { x: c[0], y: c[1], anchor: 'middle' as const }
     // Section 9.1: too small to hold its own label, so put it outside.
     const outside = Math.min(bb.w, bb.h) < LABEL_INSIDE_MIN
-    // Put the label on whichever side has room, so it never runs off the plan.
-    const toLeft = outside && bb.x + bb.w > 0.82
+    /*
+      Put the label on whichever side has room, so it never runs off the plan.
+      The threshold is generous because the label is HTML and its width depends
+      on the zone's name; a short name at 0.8 still clipped in the demo, where
+      "Balcony deck box" ends at 0.816.
+    */
+    const toLeft = outside && bb.x + bb.w > 0.72
     const labelPos = outside
       ? { x: toLeft ? Math.max(0.02, bb.x - 0.02) : Math.min(0.98, bb.x + bb.w + 0.02), y: bb.y + bb.h / 2 }
       : { x: anchor.x, y: anchor.y }
@@ -163,8 +168,18 @@ export function PlanCanvas({
             }}
             aria-hidden="true"
           >
-            {z.name}
-            <span className="mono muted ml-1 text-[10px]">{z.itemCount}</span>
+            {/*
+              Nine full names cannot fit across a 330px plan without colliding.
+              Zones already carry a short drafting code, so show that on narrow
+              screens and the full name where there is room. Done with CSS rather
+              than a JS breakpoint so there is no hydration mismatch. The
+              accessible name on the <g> is always the full one.
+            */}
+            {z.code && <span className="zonelabel-code mono">{z.code}</span>}
+            <span className={z.code ? 'zonelabel-full' : undefined}>
+              {z.name}
+              <span className="mono muted ml-1 text-[10px]">{z.itemCount}</span>
+            </span>
           </span>
         ))}
       </div>

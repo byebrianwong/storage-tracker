@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { supabaseServer, currentHousehold } from '@/lib/db/server'
+import { supabaseServer, currentHouseholdId } from '@/lib/db/server'
 import { LabelAnchorSchema } from '@/lib/types'
 import type { ActionResult } from '@/app/actions/items'
 
@@ -55,7 +55,7 @@ export async function createZone(input: unknown): Promise<ActionResult<{ id: str
   }
   const { floorId, name, roomLabel, code, polygon, labelAnchor } = parsed.data
 
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) return { ok: false, error: 'Not signed in' }
 
   const supabase = await supabaseServer()

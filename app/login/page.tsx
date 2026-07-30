@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/db/browser'
 
@@ -66,6 +67,10 @@ function LoginForm() {
       {state === 'error' && (
         <p role="alert" className="mt-3 text-sm" style={{ color: 'var(--err)' }}>{message}</p>
       )}
+
+      <p className="muted mt-4 text-center text-sm">
+        Accounts are invite only. <Link href="/demo">Try the demo</Link> — no account needed.
+      </p>
     </form>
   )
 }

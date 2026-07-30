@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { currentHousehold, supabaseServer } from '@/lib/db/server'
+import { currentHouseholdId, supabaseServer } from '@/lib/db/server'
 import { NOTION_VERSION } from '@/lib/notion/client'
 import {
   notionUrl,
@@ -23,7 +23,7 @@ const EVENT_LIMIT = 50
 type Row = Record<string, unknown>
 
 export default async function SyncSettingsPage() {
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) redirect('/login')
 
   const supabase = await supabaseServer()

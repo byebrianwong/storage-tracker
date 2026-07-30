@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { supabaseServer, currentHousehold } from '@/lib/db/server'
+import { supabaseServer, currentHouseholdId } from '@/lib/db/server'
 import { selfUrl } from '@/lib/sync/dispatch'
 import { NOTION_VERSION, isNotionConfigured } from '@/lib/notion/client'
 import {
@@ -77,7 +77,7 @@ export async function connectDatabases(
     return { ok: false, error: 'NOTION_TOKEN is not set. Add it to the environment first.' }
   }
 
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) return { ok: false, error: 'Not signed in' }
 
   const items = await resolveDataSource(
@@ -168,7 +168,7 @@ export async function createNotionDatabases(
     return { ok: false, error: 'NOTION_TOKEN is not set. Add it to the environment first.' }
   }
 
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) return { ok: false, error: 'Not signed in' }
 
   const created = await createDatabases(parsed.data.parentPageId)
@@ -211,7 +211,7 @@ export type ReconcileSummary = { note: string }
  * CRON_SECRET never leaves the server.
  */
 export async function runFullReconcile(): Promise<ActionResult<ReconcileSummary>> {
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) return { ok: false, error: 'Not signed in' }
   if (!isNotionConfigured()) {
     return { ok: false, error: 'Notion is not connected yet.' }

@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
   }
 
+  // Triggers the bootstrap so first login lands on a working plan. A
+  // not-invited result is not an error here; the app layout shows that screen.
   await currentHousehold()
 
   // Only ever redirect to a path on this origin, never to a caller supplied URL.

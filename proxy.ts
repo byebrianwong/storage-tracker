@@ -29,9 +29,14 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  // The dev only renderer harness has no data and no session; it 404s in prod.
-  const isPreview = process.env.NODE_ENV !== 'production' && pathname.startsWith('/preview')
-  const isAuthRoute = isPreview || pathname.startsWith('/login') || pathname.startsWith('/auth')
+  /*
+    Routes that must work without a session:
+      /demo           the public demo, sample data only, no database
+      /request-access where a not-invited user lands, and the demo's CTA
+      /login, /auth   the magic link flow itself
+  */
+  const isPublic = pathname.startsWith('/demo') || pathname.startsWith('/request-access')
+  const isAuthRoute = isPublic || pathname.startsWith('/login') || pathname.startsWith('/auth')
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

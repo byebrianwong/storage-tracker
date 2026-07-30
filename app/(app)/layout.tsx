@@ -7,8 +7,12 @@ import { syncHealth } from '@/lib/queries'
 import type { SkinId } from '@/lib/theme/tags'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const householdId = await currentHousehold()
-  if (!householdId) redirect('/login')
+  const household = await currentHousehold()
+  if (household.status === 'anonymous') redirect('/login')
+  // Signed in, but not on the allowlist. Cannot go to /login, which would bounce
+  // them straight back here.
+  if (household.status === 'not_invited') redirect('/request-access')
+  const householdId = household.householdId
 
   const [sync, cookieStore] = await Promise.all([syncHealth(householdId), cookies()])
   const raw = cookieStore.get('skin')?.value as SkinId | undefined

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { currentHousehold, supabaseServer } from '@/lib/db/server'
+import { currentHouseholdId, supabaseServer } from '@/lib/db/server'
 import { isNotionConfigured } from '@/lib/notion/client'
 
 export const metadata = { title: 'Settings' }
@@ -10,7 +10,7 @@ export const metadata = { title: 'Settings' }
  * parent to go back to rather than dead-ending at the app bar.
  */
 export default async function SettingsPage() {
-  const householdId = await currentHousehold()
+  const householdId = await currentHouseholdId()
   if (!householdId) redirect('/login')
 
   const supabase = await supabaseServer()

@@ -24,6 +24,9 @@ export const AUTH_STUB = `
   create or replace function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
   $$;
+  create or replace function auth.email() returns text language sql stable as $$
+    select nullif(current_setting('request.jwt.claim.email', true), '');
+  $$;
   -- Supabase roles referenced by the grant statements in the RLS migration
   do $$ begin
     if not exists (select 1 from pg_roles where rolname = 'anon') then
@@ -73,7 +76,7 @@ export const AUTH_STUB = `
 
 export type TestDb = PGlite & {
   /** Run a block as a given user id, with RLS enforced. */
-  asUser<T>(userId: string, fn: () => Promise<T>): Promise<T>
+  asUser<T>(userId: string, fn: () => Promise<T>, email?: string): Promise<T>
 }
 
 /** A fresh in-memory Postgres with every migration applied, in filename order. */
@@ -102,13 +105,14 @@ export async function freshDb(): Promise<TestDb> {
   await db.exec(`set search_path = storage_tracker, extensions, public;`)
 
   const tdb = db as unknown as TestDb
-  tdb.asUser = async (userId, fn) => {
+  tdb.asUser = async (userId, fn, email) => {
     // RLS is bypassed for superusers, which is what PGlite connects as.
     // `set role authenticated` makes the policies actually apply.
     await db.exec(
       `set role authenticated;
        set search_path = storage_tracker, extensions, public;
-       select set_config('request.jwt.claim.sub', '${userId}', false);`,
+       select set_config('request.jwt.claim.sub', '${userId}', false);
+       select set_config('request.jwt.claim.email', '${email ?? ''}', false);`,
     )
     try {
       return await fn()
@@ -116,7 +120,8 @@ export async function freshDb(): Promise<TestDb> {
       await db.exec(
         `reset role;
          set search_path = storage_tracker, extensions, public;
-         select set_config('request.jwt.claim.sub', '', false);`,
+         select set_config('request.jwt.claim.sub', '', false);
+         select set_config('request.jwt.claim.email', '', false);`,
       )
     }
   }

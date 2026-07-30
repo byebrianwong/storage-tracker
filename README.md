@@ -80,15 +80,42 @@ in `public`. See DECISIONS.md for why that matters more than it sounds.
 Both namespaces are defined once in `lib/db/constants.ts`; all three Supabase
 clients pass `db: { schema: DB_SCHEMA }`.
 
-> **Shared auth.** `auth.users` is project-wide. Anyone who can sign in to
-> another app in the same project can sign in here and will get their own empty
-> household on first login. RLS keeps households fully isolated from each other,
-> but if you want the door closed rather than merely partitioned, gate
-> `bootstrap_household` on an allowlist.
+> **Shared auth.** `auth.users` is project-wide, so anyone who can sign in to
+> another app in this project can authenticate here too. They get no household
+> unless their address is on the allowlist — see Access, below.
 
-Auth is magic link. The first sign in bootstraps a household, home and floor
-automatically. To add the second person, invite them by email in the Supabase
-dashboard and add a `household_members` row for them.
+## Access
+
+Auth is magic link, and accounts are **invite only**. `bootstrap_household`
+checks `storage_tracker.allowed_emails` before creating anything; a signed-in
+address that is not on the list gets the request-access screen and no household.
+
+```sql
+insert into storage_tracker.allowed_emails (email) values ('partner@example.com');
+```
+
+Three public routes need no session:
+
+| Route | What it is |
+| --- | --- |
+| `/demo` | The whole app on fixed sample data. No database, no account. |
+| `/request-access` | Anyone can ask. Requests land in `access_requests`. |
+| `/login`, `/auth/*` | The magic link flow itself. |
+
+Requests are reviewed at **Settings → Access**; approving adds the address to
+the allowlist. `access_requests` grants insert to `anon` but not select, so a
+visitor can ask without being able to read who else has.
+
+RLS isolates households from each other regardless, so this is about who gets an
+account at all, not about data separation.
+
+> **Heads up on email.** Supabase's default email service sends **2 messages per
+> hour** and is explicitly not for production. Configure custom SMTP before
+> expecting magic links to arrive reliably, even for two people.
+
+The first sign in bootstraps a household, home and floor automatically. To add a
+second person to *your* household rather than giving them their own, add a
+`household_members` row for them in the dashboard.
 
 ## Setting up Notion
 
@@ -133,6 +160,9 @@ app/
   (app)/setup/plan            upload plan, draw zones
   (app)/setup/zone/[zoneId]   shelf and container editor
   (app)/settings/sync         Notion connection, sync log, conflicts
+  (app)/settings/access       review and approve access requests
+  demo                        public demo, sample data, no database
+  request-access              public request form
   actions/                    Server Actions, zod validated
   api/notion/webhook          HMAC verified, enqueues and returns
   api/sync/drain              outbound worker, dispatched on write
